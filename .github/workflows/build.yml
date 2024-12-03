@@ -1,0 +1,68 @@
+name: Build and Deploy to cloud
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - qa
+      - uat
+
+jobs:
+  deploy:
+    runs-on: windows-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with: 
+        distribution: 'us-east-1'
+
+    - name: Set up Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '8'
+
+    - name: Deploy to Exchange dev
+      if: github.ref == 'refs/heads/dev'
+      run: mvn deploy --settings .maven/settings.xml
+        
+    - name: Deploy to Cloudhub dev
+      if: github.ref == 'refs/heads/dev'
+      run: mvn deploy -DmuleDeploy 
+          -Den="${{vars.ENV}}" 
+          -Denvironment="${{vars.ENVIRONMENT_DEV}}" 
+          -Dsecure_key="${{secrets.SECURE_KEY}}" 
+          -Dorg_id="${{secrets.ORG_ID}}" 
+          -Dapp_name="${{vars.APP_NAME_DEV}}"
+          -Dconnected_app_client_id="${{secrets.CONNECTED_APP_CLIENT_ID}}" 
+          -Dconnected_app_secret="${{secrets.CONNECTED_APP_CLIENT_SECRET}}" --settings .maven/settings.xml
+          
+    - name: Deploy to Exchange uat
+      if: github.ref == 'refs/heads/uat'
+      run: mvn deploy --settings .maven/settings.xml
+        
+    - name: Deploy to Cloudhub uat
+      if: github.ref == 'refs/heads/uat'
+      run: mvn deploy -DmuleDeploy 
+          -Den="${{vars.ENV}}" 
+          -Denvironment="${{vars.ENVIRONMENT_UAT}}" 
+          -Dsecure_key="${{secrets.SECURE_KEY}}" 
+          -Dorg_id="${{secrets.ORG_ID}}"
+          -Dapp_name="${{vars.APP_NAME_UAT}}"
+          -Dconnected_app_client_id="${{secrets.CONNECTED_APP_CLIENT_ID}}" 
+          -Dconnected_app_secret="${{secrets.CONNECTED_APP_CLIENT_SECRET}}" --settings .maven/settings.xml 
+      
+    - name: Deploy to Exchange Sandbox
+      if: github.ref == 'refs/heads/main'
+      run: mvn deploy --settings .maven/settings.xml
+        
+    - name: Deploy to Cloudhub Sandbox
+      if: github.ref == 'refs/heads/main'
+      run: mvn deploy -DmuleDeploy 
+          -Den="${{vars.ENV}}" 
+          -Denvironment="${{vars.ENVIRONMENT_SANDBOX}}" 
+          -Dsecure_key="${{secrets.SECURE_KEY}}" 
+          -Dorg_id="${{secrets.ORG_ID}}" 
+          -Dapp_name="${{vars.APP_NAME_SANDBOX}}"
+          -Dconnected_app_client_id="${{secrets.CONNECTED_APP_CLIENT_ID}}" 
+          -Dconnected_app_secret="${{secrets.CONNECTED_APP_CLIENT_SECRET}}" --settings .maven/settings.xml 
