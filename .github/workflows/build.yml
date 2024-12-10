@@ -3,18 +3,21 @@ name: Publish and Deploy Pipeline
 on:
   pull_request:
     branches:
-      - dev
       - uat
       - main
     types:
       - closed
+  push:
+    branches:
+      - feature/*
+      - dev
 
 env:
   MAVEN_SETTINGS_PATH: ".maven/settings.xml"
 
 jobs:
-  dev:
-    if: github.event.pull_request.merged == true && github.ref_name == 'dev'
+  deploy-to-dev:
+    if: github.ref_name == 'dev' || startsWith(github.ref_name, 'feature/')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -33,23 +36,16 @@ jobs:
           distribution: "zulu"
           java-version: 17
 
-      - name: Build and Increment Version
+      - name: Build and Deploy
         run: |
-          mvn clean package
-          mvn versions:set -DnewVersion=1.0.${{ github.run_number }}
-          git add pom.xml
-          git commit -m "Updated version for dev: 1.0.${{ github.run_number }}"
-          git push origin dev
-
-      - name: Deploy to DEV
-        run: |
-          mvn deploy --settings ${{ env.MAVEN_SETTINGS_PATH }} -DskipMunitTests -DmuleDeploy \
+          echo "Deploying to DEV environment"
+          mvn clean deploy --settings ${{ env.MAVEN_SETTINGS_PATH }} -DskipMunitTests -DmuleDeploy \
           -Dclient.id="${{ secrets.DEV_CLIENT_ID }}" \
           -Dclient.secret="${{ secrets.DEV_CLIENT_SECRET }}" \
           -Danypoint.platform.client_id="${{ secrets.DEV_PLATFORM_CLIENT_ID }}" \
           -Danypoint.platform.client_secret="${{ secrets.DEV_PLATFORM_CLIENT_SECRET }}"
 
-  uat:
+  deploy-to-uat:
     if: github.event.pull_request.merged == true && github.ref_name == 'uat'
     runs-on: ubuntu-latest
     steps:
@@ -71,13 +67,14 @@ jobs:
 
       - name: Deploy to UAT
         run: |
+          echo "Deploying to UAT environment"
           mvn deploy --settings ${{ env.MAVEN_SETTINGS_PATH }} -DskipMunitTests -DmuleDeploy \
           -Dclient.id="${{ secrets.UAT_CLIENT_ID }}" \
           -Dclient.secret="${{ secrets.UAT_CLIENT_SECRET }}" \
           -Danypoint.platform.client_id="${{ secrets.UAT_PLATFORM_CLIENT_ID }}" \
           -Danypoint.platform.client_secret="${{ secrets.UAT_PLATFORM_CLIENT_SECRET }}"
 
-  prod:
+  deploy-to-prod:
     if: github.event.pull_request.merged == true && github.ref_name == 'main'
     runs-on: ubuntu-latest
     steps:
@@ -99,6 +96,7 @@ jobs:
 
       - name: Deploy to PROD
         run: |
+          echo "Deploying to PROD environment"
           mvn deploy --settings ${{ env.MAVEN_SETTINGS_PATH }} -DskipMunitTests -DmuleDeploy \
           -Dclient.id="${{ secrets.PROD_CLIENT_ID }}" \
           -Dclient.secret="${{ secrets.PROD_CLIENT_SECRET }}" \
