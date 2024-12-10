@@ -1,68 +1,56 @@
-name: Build and Deploy to cloud
+name: Publish to Exchange & Deploy to CH2.0
+
 on:
   push:
-    branches:
-      - main
-      - dev
-      - qa
-      - uat
-
-jobs:
-  deploy:
-    runs-on: windows-latest
+    branches: [ main ]
+    
+jobs:         
+  build:
+    runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      with: 
-        distribution: 'us-east-1'
+      - name: Checkout this repo
+        uses: actions/checkout@v4
 
-    - name: Set up Java
-      uses: actions/setup-java@v4
-      with:
-        distribution: 'temurin'
-        java-version: '8'
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-maven-
 
-    - name: Deploy to Exchange dev
-      if: github.ref == 'refs/heads/dev'
-      run: mvn deploy --settings .maven/settings.xml
-        
-    - name: Deploy to Cloudhub dev
-      if: github.ref == 'refs/heads/dev'
-      run: mvn deploy -DmuleDeploy 
-          -Den="${{vars.ENV}}" 
-          -Denvironment="${{vars.ENVIRONMENT_DEV}}" 
-          -Dsecure_key="${{secrets.SECURE_KEY}}" 
-          -Dorg_id="${{secrets.ORG_ID}}" 
-          -Dapp_name="${{vars.APP_NAME_DEV}}"
-          -Dconnected_app_client_id="${{secrets.CONNECTED_APP_CLIENT_ID}}" 
-          -Dconnected_app_secret="${{secrets.CONNECTED_APP_CLIENT_SECRET}}" --settings .maven/settings.xml
+      - name: Set up JDK 1.8
+        uses: actions/setup-java@v4
+        with:
+          distribution: "zulu"
+          java-version: 8  
+
+      - name: Increment version in pom.xml
+        run: |
+          # Extract current version
+          CURRENT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
           
-    - name: Deploy to Exchange uat
-      if: github.ref == 'refs/heads/uat'
-      run: mvn deploy --settings .maven/settings.xml
-        
-    - name: Deploy to Cloudhub uat
-      if: github.ref == 'refs/heads/uat'
-      run: mvn deploy -DmuleDeploy 
-          -Den="${{vars.ENV}}" 
-          -Denvironment="${{vars.ENVIRONMENT_UAT}}" 
-          -Dsecure_key="${{secrets.SECURE_KEY}}" 
-          -Dorg_id="${{secrets.ORG_ID}}"
-          -Dapp_name="${{vars.APP_NAME_UAT}}"
-          -Dconnected_app_client_id="${{secrets.CONNECTED_APP_CLIENT_ID}}" 
-          -Dconnected_app_secret="${{secrets.CONNECTED_APP_CLIENT_SECRET}}" --settings .maven/settings.xml 
-      
-    - name: Deploy to Exchange Sandbox
-      if: github.ref == 'refs/heads/main'
-      run: mvn deploy --settings .maven/settings.xml
-        
-    - name: Deploy to Cloudhub Sandbox
-      if: github.ref == 'refs/heads/main'
-      run: mvn deploy -DmuleDeploy 
-          -Den="${{vars.ENV}}" 
-          -Denvironment="${{vars.ENVIRONMENT_SANDBOX}}" 
-          -Dsecure_key="${{secrets.SECURE_KEY}}" 
-          -Dorg_id="${{secrets.ORG_ID}}" 
-          -Dapp_name="${{vars.APP_NAME_SANDBOX}}"
-          -Dconnected_app_client_id="${{secrets.CONNECTED_APP_CLIENT_ID}}" 
-          -Dconnected_app_secret="${{secrets.CONNECTED_APP_CLIENT_SECRET}}" --settings .maven/settings.xml 
+          # Increment version
+          mvn build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion} versions:commit
+          
+          # Capture the new version
+          VERSION_NUMBER=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          
+          # Commit the updated pom.xml
+          git config user.name "Ajithkumar3003"
+          git config user.email "ajithsugu12@gmail.com"
+          git add pom.xml
+          git commit -m "Incremented version to $VERSION_NUMBER [skip ci]"
+          git push origin main
+      - name: Publish to Exchange
+        run: |
+          mvn deploy --settings .maven/settings.xml -DskipMunitTests \
+          -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
+          -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}"
+
+      - name: Deploy to CloudHub 2.0
+        run: |
+          mvn deploy --settings .maven/settings.xml -DskipMunitTests -DmuleDeploy \
+          -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
+          -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}" \
+          -Danypoint.platform.client_id="${{ secrets.ANYPOINT_PLATFORM_CLIENT_ID }}" \
+          -Danypoint.platform.client_secret="${{ secrets.ANYPOINT_PLATFORM_CLIENT_SECRET }}"
