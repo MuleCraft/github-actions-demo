@@ -13,8 +13,6 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<mule.version>4.6.1</mule.version>
-		<env>qa</env>
-		<target>Cloudhub-US-East-2</target>
 		<server>Repository</server>
 		<releaseChannel>LTS</releaseChannel>
 		<uri>https://anypoint.mulesoft.com</uri>
