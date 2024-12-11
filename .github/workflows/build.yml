@@ -53,8 +53,9 @@ jobs:
           -Dclient.secret="${{ secrets.DEV_CLIENT_SECRET }}" \
           -Danypoint.platform.client_id="${{ secrets.DEV_PLATFORM_CLIENT_ID }}" \
           -Danypoint.platform.client_secret="${{ secrets.DEV_PLATFORM_CLIENT_SECRET }}" \
-          -Denv="${{ secrets.CLOUDHUBENVIRONMENT }}" \
-          -Dtarget="${{ secrets.TARGET }}"
+          -DcloudhubEnvironment="${{ secrets.CLOUDHUBENVIRONMENT }}" \
+          -Dtarget="${{ secrets.TARGET }}" \
+          -Denv="${{ secrets.ENV }}"
 
   Deploying_to_UAT:
     if: github.event.pull_request.merged == true && github.ref_name == 'uat'
