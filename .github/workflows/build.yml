@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - feature
-      - dev
 
 jobs:
   Deploying_to_Development:
@@ -33,18 +32,9 @@ jobs:
 
       - name: Publish to Exchange
         run: |
-          # Extract artifact name from pom.xml
-          ARTIFACT_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
-          ARTIFACT_SUFFIX="-dev" # Default suffix for dev
-          if [[ "${{ github.ref_name }}" == feature/* ]]; then
-            ARTIFACT_SUFFIX="-feature"
-          fi
-          echo "Publishing to Exchange with artifact suffix: ${ARTIFACT_SUFFIX}"
-      
           # Publish to Exchange
           mvn deploy --settings .maven/settings.xml -DskipMunitTests \
-            -Dartifact.name="${ARTIFACT_NAME}${ARTIFACT_SUFFIX}" \
-            -Dartifact.suffix="${ARTIFACT_SUFFIX}" \
+            -DapplicationName="${ARTIFACT_NAME}-${{ secrets.ENV }}" \
             -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
             -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}"
 
