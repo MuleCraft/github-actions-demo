@@ -3,11 +3,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>73537153-ddd4-4182-aec6-2d6880059206</groupId>
-	<artifactId>github-actions-demo</artifactId>
-	<version>1.0.0</version>
+	<artifactId>mc-demo-api</artifactId>
+	<version>1.0.2</version>
 	<packaging>mule-application</packaging>
 
-	<name>mule-demo-app</name>
+	<name>mc-demo-api</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -21,7 +21,7 @@
 		<provider>MC</provider>
 
 		<app.runtime>4.6.1</app.runtime>
-		<mule.maven.plugin.version>4.1.1</mule.maven.plugin.version>
+		<mule.maven.plugin.version>4.3.0</mule.maven.plugin.version>
 	</properties>
 
 	<build>
@@ -104,12 +104,6 @@
 			<groupId>org.mule.modules</groupId>
 			<artifactId>mule-apikit-module</artifactId>
 			<version>1.11.1</version>
-			<classifier>mule-plugin</classifier>
-		</dependency>
-		<dependency>
-			<groupId>org.mule.connectors</groupId>
-			<artifactId>mule-sockets-connector</artifactId>
-			<version>1.2.4</version>
 			<classifier>mule-plugin</classifier>
 		</dependency>
 		<dependency>
