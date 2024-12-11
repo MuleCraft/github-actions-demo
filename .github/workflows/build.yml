@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - feature
-      - dev
 
 jobs:
   Deploying_to_Development:
@@ -35,7 +34,7 @@ jobs:
         run: |
           # Extract artifact name from pom.xml
           ARTIFACT_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
-          echo "Artifact Name: ${ARTIFACT_NAME}"
+          echo "Artifact Name: ${ARTIFACT_NAME}-${{ secrets.ENV }}"
       
           # Publish to Exchange
           mvn deploy --settings .maven/settings.xml -DskipMunitTests \
