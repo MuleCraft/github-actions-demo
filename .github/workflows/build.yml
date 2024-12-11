@@ -32,6 +32,28 @@ jobs:
         with:
           distribution: "zulu"
           java-version: 17
+          
+      - name: Increment Version in pom.xml
+        run: |
+          # Extract current version
+          CURRENT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "Current version: $CURRENT_VERSION"
+
+          # Increment version
+          mvn build-helper:parse-version versions:set \
+              -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion} \
+              versions:commit
+
+          # Capture the new version
+          NEW_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
+          echo "New version: $NEW_VERSION"
+
+          # Commit updated pom.xml
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add pom.xml
+          git commit -m "Incremented version to $NEW_VERSION [skip ci]"
+          git push origin $GITHUB_REF_NAME
 
       - name: Publish to Exchange
         run: |
