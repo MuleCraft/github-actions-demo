@@ -42,8 +42,8 @@ jobs:
           echo "Publishing to Exchange with artifact suffix: ${ARTIFACT_SUFFIX}"
           mvn deploy --settings .maven/settings.xml -DskipMunitTests \
           -Dartifact.name="mc-demo-api${ARTIFACT_SUFFIX}" \
-          -Dclient.id="${{ secrets.DEV_DEV_CLIENT_ID }}" \
-          -Dclient.secret="${{ secrets.DEV_DEV_CLIENT_SECRET }}"
+          -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
+          -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}"
 
       - name: Build and Deploy to Dev
         run: |
