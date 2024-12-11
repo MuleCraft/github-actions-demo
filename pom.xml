@@ -3,8 +3,8 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>73537153-ddd4-4182-aec6-2d6880059206</groupId>
-	<artifactId>mc-demo-api</artifactId>
-	<version>1.0.14</version>
+	<artifactId>github-actions-demo-dev</artifactId>
+	<version>1.0.0</version>
 	<packaging>mule-application</packaging>
 
 	<name>mc-demo-api</name>
@@ -43,7 +43,7 @@
 						<target>${target}</target>
 						<server>${server}</server>
 						<muleVersion>${mule.version}</muleVersion>
-						<applicationName>${project.artifactId}</applicationName>
+						<applicationName>${project.artifactId}${artifact.suffix}</applicationName>
 						<releaseChannel>${releaseChannel}</releaseChannel>
 						<replicas>1</replicas>
 						<vCores>0.1</vCores>
