@@ -7,6 +7,7 @@ on:
   push:
     branches:
       - feature
+      - dev
 
 jobs:
   Deploying_to_Development:
@@ -39,37 +40,24 @@ jobs:
             ARTIFACT_SUFFIX="-feature"
           fi
           echo "Publishing to Exchange with artifact suffix: ${ARTIFACT_SUFFIX}"
+      
+          # Publish to Exchange
           mvn deploy --settings .maven/settings.xml -DskipMunitTests \
-          -Dartifact.name="${ARTIFACT_NAME}${ARTIFACT_SUFFIX}" \
-          -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
-          -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}" \
-          -DapplicationName=="${ARTIFACT_NAME}${ARTIFACT_SUFFIX}"
+            -Dartifact.name="${ARTIFACT_NAME}${ARTIFACT_SUFFIX}" \
+            -Dartifact.suffix="${ARTIFACT_SUFFIX}" \
+            -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
+            -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}"
 
-      - name: Build and Deploy to Dev
+      - name: Build and Deploy to CloudHub
         run: |
-          echo "Deploying to DEV environment for branch $GITHUB_REF_NAME"
-          
-          # Extract the artifact name from pom.xml
-          ARTIFACT_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
-          
-          # Append the environment name to the artifact name
-          FULL_ARTIFACT_NAME="${ARTIFACT_NAME}-${{ secrets.ENV }}"
-          
-          echo "Deploying artifact: ${FULL_ARTIFACT_NAME}"
-          
-          # Deploy with the updated artifact name
+          echo "Deploying to CloudHub with artifact suffix: ${ARTIFACT_SUFFIX}"
           mvn deploy --settings .maven/settings.xml -DskipMunitTests -DmuleDeploy \
-            -Dclient.id="${{ secrets.DEV_CLIENT_ID }}" \
-            -Dclient.secret="${{ secrets.DEV_CLIENT_SECRET }}" \
-            -Danypoint.platform.client_id="${{ secrets.DEV_PLATFORM_CLIENT_ID }}" \
-            -Danypoint.platform.client_secret="${{ secrets.DEV_PLATFORM_CLIENT_SECRET }}" \
-            -DcloudhubEnvironment="${{ secrets.CLOUDHUBENVIRONMENT }}" \
-            -Dtarget="${{ secrets.TARGET }}" \
-            -Denv="${{ secrets.ENV }}" \
-            -Dartifact.name="${FULL_ARTIFACT_NAME}"
-            -DapplicationName=="${FULL_ARTIFACT_NAME}"
-
-
+            -Dartifact.suffix="${ARTIFACT_SUFFIX}" \
+            -Dclient.id="${{ secrets.CLIENT_ID }}" \
+            -Dclient.secret="${{ secrets.CLIENT_SECRET }}" \
+            -Danypoint.platform.client_id="${{ secrets.PLATFORM_CLIENT_ID }}" \
+            -Danypoint.platform.client_secret="${{ secrets.PLATFORM_CLIENT_SECRET }}" \
+            -DcloudhubEnvironment="${{ secrets.CLOUDHUB_ENVIRONMENT }}"
 
   Deploying_to_UAT:
     if: github.event.pull_request.merged == true && github.ref_name == 'uat'
