@@ -39,7 +39,7 @@
 					<cloudhub2Deployment>
 						<uri>${uri}</uri>
 						<provider>${provider}</provider>
-						<environment>${env}</environment>
+						<environment>${cloudhubEnvironment}</environment>
 						<target>${target}</target>
 						<server>${server}</server>
 						<muleVersion>${mule.version}</muleVersion>
