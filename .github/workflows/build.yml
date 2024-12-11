@@ -34,11 +34,8 @@ jobs:
 
       - name: Publish to Exchange
         run: |
-          # Set the default artifact suffix based on the branch
-          ARTIFACT_SUFFIX="-dev" # Default suffix for dev
-          if [[ "${{ github.ref_name }}" == feature/* ]]; then
-            ARTIFACT_SUFFIX="-feature"
-          fi
+          # Set the default artifact suffix for UAT
+          ARTIFACT_SUFFIX="-dev"
 
           # Extract the artifact name from pom.xml
           ARTIFACT_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
