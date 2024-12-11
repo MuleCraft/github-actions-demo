@@ -9,7 +9,6 @@ on:
       - dev
       - uat
       - main
-      - feature/*
 
 jobs:
   feature-or-dev:
@@ -32,40 +31,26 @@ jobs:
         with:
           distribution: "zulu"
           java-version: 17
-          
-      - name: Increment Version in pom.xml
-        run: |
-          # Extract current version
-          CURRENT_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          echo "Current version: $CURRENT_VERSION"
-
-          # Increment version
-          mvn build-helper:parse-version versions:set \
-              -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion} \
-              versions:commit
-
-          # Capture the new version
-          NEW_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
-          echo "New version: $NEW_VERSION"
-
-          # Commit updated pom.xml
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git add pom.xml
-          git commit -m "Incremented version to $NEW_VERSION [skip ci]"
-          git push origin $GITHUB_REF_NAME
 
       - name: Publish to Exchange
         run: |
+          # Set the default artifact suffix based on the branch
           ARTIFACT_SUFFIX="-dev" # Default suffix for dev
           if [[ "${{ github.ref_name }}" == feature/* ]]; then
             ARTIFACT_SUFFIX="-feature"
           fi
-          echo "Publishing to Exchange with artifact suffix: ${ARTIFACT_SUFFIX}"
+
+          # Extract the artifact name from pom.xml
+          ARTIFACT_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
+
+          # Print the artifact name for debugging purposes
+          echo "Publishing artifact: $ARTIFACT_NAME$ARTIFACT_SUFFIX"
+
+          # Publish to Exchange
           mvn deploy --settings .maven/settings.xml -DskipMunitTests \
-          -Dartifact.name="mc-demo-api${ARTIFACT_SUFFIX}" \
-          -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
-          -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}"
+            -Dartifact.name="${ARTIFACT_NAME}${ARTIFACT_SUFFIX}" \
+            -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
+            -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}"
 
       - name: Build and Deploy to Dev
         run: |
