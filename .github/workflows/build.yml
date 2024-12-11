@@ -54,7 +54,7 @@ jobs:
           -Dclient.secret="${{ secrets.DEV_CLIENT_SECRET }}" \
           -Danypoint.platform.client_id="${{ secrets.DEV_PLATFORM_CLIENT_ID }}" \
           -Danypoint.platform.client_secret="${{ secrets.DEV_PLATFORM_CLIENT_SECRET }}" \
-          -DcloudhubEnvironment="${{ secrets.CLOUDHUBENVIRONMENT }}" \
+          -DcloudhubEnvironment="DEV" \
           -Dtarget="${{ secrets.TARGET }}" \
           -Denv="${{ secrets.ENV }}"
 
