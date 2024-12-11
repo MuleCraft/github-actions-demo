@@ -9,7 +9,6 @@ on:
       - dev
       - uat
       - main
-      - feature/*
 
 jobs:
   feature-or-dev:
@@ -85,11 +84,21 @@ jobs:
 
       - name: Publish to Exchange
         run: |
-          echo "Publishing to Exchange for UAT"
+          # Set the default artifact suffix for UAT
+          ARTIFACT_SUFFIX="-uat"
+
+          # Extract the artifact name from pom.xml
+          ARTIFACT_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
+
+          # Print the artifact name for debugging purposes
+          echo "Publishing artifact: $ARTIFACT_NAME$ARTIFACT_SUFFIX"
+
+          # Publish to Exchange
           mvn deploy --settings .maven/settings.xml -DskipMunitTests \
-          -Dartifact.name="mc-demo-api-uat" \
-          -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
-          -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}"
+            -Dartifact.name="${ARTIFACT_NAME}${ARTIFACT_SUFFIX}" \
+            -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
+            -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}"
+
 
       - name: Deploy to UAT
         run: |
@@ -122,14 +131,19 @@ jobs:
           java-version: 17
 
       - name: Publish to Exchange
-        if: ${{ github.ref_name != 'main' }} # Skip suffix for main
         run: |
-          echo "Publishing to Exchange for PROD without suffix"
-          mvn deploy --settings .maven/settings.xml -DskipMunitTests \
-          -Dartifact.name="mc-demo-api" \
-          -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
-          -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}"
+          # Extract the artifact name from pom.xml
+          ARTIFACT_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
 
+          # Print the artifact name for debugging purposes
+          echo "Publishing artifact: $ARTIFACT_NAME"
+
+          # Publish to Exchange
+          mvn deploy --settings .maven/settings.xml -DskipMunitTests \
+            -Dartifact.name="$ARTIFACT_NAME" \
+            -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
+            -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}"
+            
       - name: Deploy to PROD
         run: |
           echo "Deploying to PROD environment for branch $GITHUB_REF_NAME"
