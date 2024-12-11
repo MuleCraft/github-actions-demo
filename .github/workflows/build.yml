@@ -11,10 +11,10 @@ on:
       - main
 
 jobs:
-  Deploying_to_Developement:
-    if: github.event.pull_request.merged == true && github.ref_name == 'dev'
+  Deploying_to_Development:
+    if: ${{ github.event.pull_request.merged == true && startsWith(github.ref, 'refs/heads/dev') }}
     runs-on: ubuntu-latest
-    environment: dev # Associate with the 'dev' environment
+    environment: dev
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -34,36 +34,29 @@ jobs:
 
       - name: Publish to Exchange
         run: |
-          # Set the default artifact suffix for UAT
           ARTIFACT_SUFFIX="-dev"
-
-          # Extract the artifact name from pom.xml
           ARTIFACT_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
-
-          # Print the artifact name for debugging purposes
-          echo "Publishing artifact: $ARTIFACT_NAME$ARTIFACT_SUFFIX"
-
-          # Publish to Exchange
+          echo "Publishing artifact: ${ARTIFACT_NAME}${ARTIFACT_SUFFIX}"
           mvn deploy --settings .maven/settings.xml -DskipMunitTests \
             -Dartifact.name="${ARTIFACT_NAME}${ARTIFACT_SUFFIX}" \
             -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
             -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}"
 
-      - name: Build and Deploy to Dev
+      - name: Deploy to Development
         run: |
-          echo "Deploying to DEV environment for branch $GITHUB_REF_NAME"
+          echo "Deploying to DEV environment"
           mvn deploy --settings .maven/settings.xml -DskipMunitTests -DmuleDeploy \
-          -Dclient.id="${{ secrets.DEV_CLIENT_ID }}" \
-          -Dclient.secret="${{ secrets.DEV_CLIENT_SECRET }}" \
-          -Danypoint.platform.client_id="${{ secrets.DEV_PLATFORM_CLIENT_ID }}" \
-          -Danypoint.platform.client_secret="${{ secrets.DEV_PLATFORM_CLIENT_SECRET }}" \
-          -Denv="${{ secrets.ENV }}" \
-          -Dtarget="${{ secrets.TARGET }}" 
-          
+            -Dclient.id="${{ secrets.DEV_CLIENT_ID }}" \
+            -Dclient.secret="${{ secrets.DEV_CLIENT_SECRET }}" \
+            -Danypoint.platform.client_id="${{ secrets.DEV_PLATFORM_CLIENT_ID }}" \
+            -Danypoint.platform.client_secret="${{ secrets.DEV_PLATFORM_CLIENT_SECRET }}" \
+            -Denv="${{ secrets.ENV }}" \
+            -Dtarget="${{ secrets.TARGET }}"
+
   Deploying_to_UAT:
-    if: github.event.pull_request.merged == true && github.ref_name == 'uat'
+    if: ${{ github.event.pull_request.merged == true && startsWith(github.ref, 'refs/heads/uat') }}
     runs-on: ubuntu-latest
-    environment: uat # Associate with the 'uat' environment
+    environment: uat
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -83,35 +76,27 @@ jobs:
 
       - name: Publish to Exchange
         run: |
-          # Set the default artifact suffix for UAT
           ARTIFACT_SUFFIX="-uat"
-
-          # Extract the artifact name from pom.xml
           ARTIFACT_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
-
-          # Print the artifact name for debugging purposes
-          echo "Publishing artifact: $ARTIFACT_NAME$ARTIFACT_SUFFIX"
-
-          # Publish to Exchange
+          echo "Publishing artifact: ${ARTIFACT_NAME}${ARTIFACT_SUFFIX}"
           mvn deploy --settings .maven/settings.xml -DskipMunitTests \
             -Dartifact.name="${ARTIFACT_NAME}${ARTIFACT_SUFFIX}" \
             -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
             -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}"
-
 
       - name: Deploy to UAT
         run: |
-          echo "Deploying to UAT environment for branch $GITHUB_REF_NAME"
+          echo "Deploying to UAT environment"
           mvn deploy --settings .maven/settings.xml -DskipMunitTests -DmuleDeploy \
-          -Dclient.id="${{ secrets.CLIENT_ID }}" \
-          -Dclient.secret="${{ secrets.CLIENT_SECRET }}" \
-          -Danypoint.platform.client_id="${{ secrets.PLATFORM_CLIENT_ID }}" \
-          -Danypoint.platform.client_secret="${{ secrets.PLATFORM_CLIENT_SECRET }}"
+            -Dclient.id="${{ secrets.CLIENT_ID }}" \
+            -Dclient.secret="${{ secrets.CLIENT_SECRET }}" \
+            -Danypoint.platform.client_id="${{ secrets.PLATFORM_CLIENT_ID }}" \
+            -Danypoint.platform.client_secret="${{ secrets.PLATFORM_CLIENT_SECRET }}"
 
   Deploying_to_PROD:
-    if: github.event.pull_request.merged == true && github.ref_name == 'main'
+    if: ${{ github.event.pull_request.merged == true && startsWith(github.ref, 'refs/heads/main') }}
     runs-on: ubuntu-latest
-    environment: prod # Associate with the 'prod' environment
+    environment: prod
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -131,23 +116,18 @@ jobs:
 
       - name: Publish to Exchange
         run: |
-          # Extract the artifact name from pom.xml
           ARTIFACT_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
-
-          # Print the artifact name for debugging purposes
-          echo "Publishing artifact: $ARTIFACT_NAME"
-
-          # Publish to Exchange
+          echo "Publishing artifact: ${ARTIFACT_NAME}"
           mvn deploy --settings .maven/settings.xml -DskipMunitTests \
-            -Dartifact.name="$ARTIFACT_NAME" \
+            -Dartifact.name="${ARTIFACT_NAME}" \
             -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
             -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}"
-            
+
       - name: Deploy to PROD
         run: |
-          echo "Deploying to PROD environment for branch $GITHUB_REF_NAME"
+          echo "Deploying to PROD environment"
           mvn deploy --settings .maven/settings.xml -DskipMunitTests -DmuleDeploy \
-          -Dclient.id="${{ secrets.CLIENT_ID }}" \
-          -Dclient.secret="${{ secrets.CLIENT_SECRET }}" \
-          -Danypoint.platform.client_id="${{ secrets.PLATFORM_CLIENT_ID }}" \
-          -Danypoint.platform.client_secret="${{ secrets.PLATFORM_CLIENT_SECRET }}"
+            -Dclient.id="${{ secrets.CLIENT_ID }}" \
+            -Dclient.secret="${{ secrets.CLIENT_SECRET }}" \
+            -Danypoint.platform.client_id="${{ secrets.PLATFORM_CLIENT_ID }}" \
+            -Danypoint.platform.client_secret="${{ secrets.PLATFORM_CLIENT_SECRET }}"
