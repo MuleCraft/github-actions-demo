@@ -8,7 +8,6 @@ on:
     branches:
       - uat
       - main
-      - dev
 
 jobs:
   Deploying_to_Development:
