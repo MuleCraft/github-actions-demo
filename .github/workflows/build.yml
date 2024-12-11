@@ -9,7 +9,6 @@ on:
       - dev
       - uat
       - main
-      - feature/*
 
 jobs:
   feature-or-dev:
