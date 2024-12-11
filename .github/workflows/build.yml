@@ -1,4 +1,4 @@
-_name: Publish and Deploy Pipeline
+name: Publish and Deploy Pipeline
 
 on:
   pull_request:
