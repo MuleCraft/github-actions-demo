@@ -53,7 +53,7 @@ jobs:
           -Dclient.secret="${{ secrets.DEV_CLIENT_SECRET }}" \
           -Danypoint.platform.client_id="${{ secrets.DEV_PLATFORM_CLIENT_ID }}" \
           -Danypoint.platform.client_secret="${{ secrets.DEV_PLATFORM_CLIENT_SECRET }}" \
-          -Denv="${{ secrets.ENV }}" \
+          -Denv="${{ secrets.CLOUDHUBENVIRONMENT }}" \
           -Dtarget="${{ secrets.TARGET }}"
 
   Deploying_to_UAT:
