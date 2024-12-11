@@ -49,14 +49,26 @@ jobs:
       - name: Build and Deploy to Dev
         run: |
           echo "Deploying to DEV environment for branch $GITHUB_REF_NAME"
+          
+          # Extract the artifact name from pom.xml
+          ARTIFACT_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
+          
+          # Append the environment name to the artifact name
+          FULL_ARTIFACT_NAME="${ARTIFACT_NAME}-${{ secrets.ENV }}"
+          
+          echo "Deploying artifact: ${FULL_ARTIFACT_NAME}"
+          
+          # Deploy with the updated artifact name
           mvn deploy --settings .maven/settings.xml -DskipMunitTests -DmuleDeploy \
-          -Dclient.id="${{ secrets.DEV_CLIENT_ID }}" \
-          -Dclient.secret="${{ secrets.DEV_CLIENT_SECRET }}" \
-          -Danypoint.platform.client_id="${{ secrets.DEV_PLATFORM_CLIENT_ID }}" \
-          -Danypoint.platform.client_secret="${{ secrets.DEV_PLATFORM_CLIENT_SECRET }}" \
-          -DcloudhubEnvironment="${{ secrets.CLOUDHUBENVIRONMENT }}" \
-          -Dtarget="${{ secrets.TARGET }}" \
-          -Denv="${{ secrets.ENV }}"
+            -Dclient.id="${{ secrets.DEV_CLIENT_ID }}" \
+            -Dclient.secret="${{ secrets.DEV_CLIENT_SECRET }}" \
+            -Danypoint.platform.client_id="${{ secrets.DEV_PLATFORM_CLIENT_ID }}" \
+            -Danypoint.platform.client_secret="${{ secrets.DEV_PLATFORM_CLIENT_SECRET }}" \
+            -DcloudhubEnvironment="${{ secrets.CLOUDHUBENVIRONMENT }}" \
+            -Dtarget="${{ secrets.TARGET }}" \
+            -Denv="${{ secrets.ENV }}" \
+            -Dartifact.name="${FULL_ARTIFACT_NAME}"
+
 
   Deploying_to_UAT:
     if: github.event.pull_request.merged == true && github.ref_name == 'uat'
