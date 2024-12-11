@@ -4,10 +4,10 @@
 
 	<groupId>73537153-ddd4-4182-aec6-2d6880059206</groupId>
 	<artifactId>github-actions-demo</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.1</version>
 	<packaging>mule-application</packaging>
 
-	<name>mc-demo-api</name>
+	<name>github-actions-demo</name>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
