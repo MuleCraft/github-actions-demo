@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - feature
-      - dev
 
 jobs:
   Deploying_to_Development:
@@ -56,10 +55,10 @@ jobs:
         run: |
           echo "Deploying to CloudHub with artifact suffix: ${ARTIFACT_NAME}-${GITHUB_REF_NAME}"
           mvn deploy --settings .maven/settings.xml -DskipMunitTests -DmuleDeploy \
-            -Dclient.id="${{ secrets.CLIENT_ID }}" \
-            -Dclient.secret="${{ secrets.CLIENT_SECRET }}" \
-            -Danypoint.platform.client_id="${{ secrets.PLATFORM_CLIENT_ID }}" \
-            -Danypoint.platform.client_secret="${{ secrets.PLATFORM_CLIENT_SECRET }}" \
+            -Dclient.id="${{ secrets.DEV_CLIENT_ID }}" \
+            -Dclient.secret="${{ secrets.DEV_CLIENT_SECRET }}" \
+            -Danypoint.platform.client_id="${{ secrets.DEV_PLATFORM_CLIENT_ID }}" \
+            -Danypoint.platform.client_secret="${{ secrets.DEV_PLATFORM_CLIENT_SECRET }}" \
             -DcloudhubEnvironment="${{ secrets.CLOUDHUBENVIRONMENT }}" \
             -Dtarget="${{ secrets.TARGET }}" \
             -Denv="${{ secrets.ENV }}" 
