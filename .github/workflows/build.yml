@@ -12,7 +12,7 @@ on:
 
 jobs:
   Deploying_to_Development:
-    if: github.ref_name == 'dev'
+    if: github.event.pull_request.merged == true && github.ref_name == 'dev'
     runs-on: ubuntu-latest
     environment: dev # Associate with the 'dev' environment
     steps:
