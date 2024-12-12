@@ -1,5 +1,2 @@
-http:
-  port: "8081"
-  
-log:
- message: "This is DEV"
+api:
+  autodiscovery: "20110244"
