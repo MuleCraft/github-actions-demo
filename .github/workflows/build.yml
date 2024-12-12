@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - feature
-      - dev
 
 jobs:
   Deploying_to_Development:
@@ -45,8 +44,11 @@ jobs:
           fi
 
           # Extract GitHub branch name
-          BRANCH_NAME=${GITHUB_REF_NAME}
+          echo "Extracting GitHub branch name..."
+          BRANCH_NAME=$(echo "${GITHUB_REF#refs/heads/}")
           echo "Detected GitHub Branch Name: ${BRANCH_NAME}"
+          
+          # Construct application name
           APPLICATION_NAME="${ARTIFACT_NAME}-${BRANCH_NAME}"
           echo "Final Application Name: ${APPLICATION_NAME}"
 
@@ -55,6 +57,7 @@ jobs:
             -DapplicationName="${APPLICATION_NAME}" \
             -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
             -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}"
+
 
       - name: Build and Deploy to CloudHub
         shell: bash
