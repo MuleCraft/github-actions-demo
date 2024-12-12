@@ -34,13 +34,7 @@ jobs:
         shell: bash
         run: |
           # Default artifact suffix for dev
-          ARTIFACT_SUFFIX="-dev"
-      
-          # Check if the current GitHub ref is a feature branch and set suffix accordingly
-          if [[ "${{ github.ref_name }}" == feature/* ]]; then
-            ARTIFACT_SUFFIX="-feature"
-          fi
-      
+          ARTIFACT_SUFFIX="-dev" 
           echo "Publishing to Exchange with artifact suffix: ${ARTIFACT_SUFFIX}"
       
           # Get the artifactId from the pom.xml (assumes maven project is set up correctly)
