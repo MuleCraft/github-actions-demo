@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - feature
-      - dev
 
 jobs:
   Deploying_to_Development:
@@ -61,10 +60,10 @@ jobs:
             -Dclient.secret="${{ secrets.CLIENT_SECRET }}" \
             -Danypoint.platform.client_id="${{ secrets.PLATFORM_CLIENT_ID }}" \
             -Danypoint.platform.client_secret="${{ secrets.PLATFORM_CLIENT_SECRET }}" \
-            -DcloudhubEnvironment="${{ secrets.CLOUDHUB_ENVIRONMENT }}" \
+            -DcloudhubEnvironment="${{ secrets.CLOUDHUBENVIRONMENT }}" \
             -Dtarget="${{ secrets.TARGET }}" \
             -Denv="${{ secrets.ENV }}" \
-            -DapplicationName="github-actions-demo-dev" -X
+            -DapplicationName="github-actions-demo-dev"
 
   Deploying_to_UAT:
     if: github.event.pull_request.merged == true && github.ref_name == 'uat'
