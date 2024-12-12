@@ -33,11 +33,17 @@ jobs:
       - name: Publish to Exchange
         shell: bash
         run: |
+          ARTIFACT_SUFFIX="-dev" # Default suffix for dev
+          if [[ "${{ github.ref_name }}" == feature/* ]]; then
+            ARTIFACT_SUFFIX="-feature"
+          fi
+          echo "Publishing to Exchange with artifact suffix: ${ARTIFACT_SUFFIX}"
           # Publish to Exchange
           mvn clean deploy --settings .maven/settings.xml -DskipMunitTests \
             -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
             -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}" \
             -Denv="dev"
+            -DapplicationName=${ARTIFACT_SUFFIX}
 
       - name: Build and Deploy to CloudHub
         shell: bash
