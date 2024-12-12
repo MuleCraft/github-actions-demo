@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - feature
-      - dev
 
 jobs:
   Deploying_to_Development:
@@ -35,14 +34,17 @@ jobs:
         run: |
           # Extract artifact name from pom.xml
           ARTIFACT_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
-          echo "Artifact Name: ${ARTIFACT_NAME}-dev"
-      
+          if [[ -z "${ARTIFACT_NAME}" ]]; then
+            echo "Error: Artifact name could not be determined."
+            exit 1
+          fi
+          echo "Artifact Name: ${ARTIFACT_NAME}-${{ secrets.ENV }}"
+
           # Publish to Exchange
           mvn deploy --settings .maven/settings.xml -DskipMunitTests \
-            -DapplicationName="${ARTIFACT_NAME}-dev" \
+            -DapplicationName="${ARTIFACT_NAME}-${{ secrets.ENV }}" \
             -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
             -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}"
-
 
       - name: Build and Deploy to CloudHub
         run: |
@@ -53,7 +55,7 @@ jobs:
             -Danypoint.platform.client_id="${{ secrets.PLATFORM_CLIENT_ID }}" \
             -Danypoint.platform.client_secret="${{ secrets.PLATFORM_CLIENT_SECRET }}" \
             -DcloudhubEnvironment="${{ secrets.CLOUDHUB_ENVIRONMENT }}" \
-            -DapplicationName="${ARTIFACT_NAME}-dev" \
+            -DapplicationName="${ARTIFACT_NAME}-${{ secrets.ENV }}" \
             -Dtarget="${{ secrets.TARGET }}" \
             -Denv="${{ secrets.ENV }}"
 
