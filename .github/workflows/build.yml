@@ -6,12 +6,12 @@ on:
       - closed
   push:
     branches:
-      - feature
-      - dev
+      - uat
+      - main
 
 jobs:
   Deploying_to_Development:
-    if: startsWith(github.ref_name, 'feature/') || github.ref_name == 'dev'
+    if: github.ref_name == 'dev'
     runs-on: ubuntu-latest
     environment: dev # Associate with the 'dev' environment
     steps:
@@ -33,19 +33,7 @@ jobs:
 
       - name: Publish to Exchange
         shell: bash
-        run: |
-          # Default artifact suffix for dev
-          ARTIFACT_SUFFIX="-dev" 
-          echo "Publishing to Exchange with artifact suffix: ${ARTIFACT_SUFFIX}"
-      
-          # Get the artifactId from the pom.xml (assumes maven project is set up correctly)
-          ARTIFACT_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
-      
-          # Build the final application name
-          APPLICATION_NAME="${ARTIFACT_NAME}${ARTIFACT_SUFFIX}"
-      
-          echo "Final Application Name: ${APPLICATION_NAME}"
-      
+        run: |      
           # Publish to Exchange
           mvn clean deploy --settings .maven/settings.xml -DskipMunitTests  \
             -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
