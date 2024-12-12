@@ -7,7 +7,6 @@ on:
   push:
     branches:
       - feature
-      - dev
 
 jobs:
   Deploying_to_Development:
@@ -47,10 +46,10 @@ jobs:
           echo "Final Application Name: ${APPLICATION_NAME}"
       
           # Publish to Exchange
-          mvn clean deploy --settings .maven/settings.xml -DskipMunitTests \
+          mvn clean deploy --settings .maven/settings.xml -DskipMunitTests  \
             -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
             -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}" \
-            -DapplicationName="github-actions-demo-dev"
+            -DapplicationName="github-actions-demo-dev" -X
 
       - name: Build and Deploy to CloudHub
         shell: bash
@@ -64,7 +63,7 @@ jobs:
             -DcloudhubEnvironment="${{ secrets.CLOUDHUB_ENVIRONMENT }}" \
             -Dtarget="${{ secrets.TARGET }}" \
             -Denv="${{ secrets.ENV }}" \
-            -DapplicationName="github-actions-demo-dev"
+            -DapplicationName="github-actions-demo-dev" -X
 
   Deploying_to_UAT:
     if: github.event.pull_request.merged == true && github.ref_name == 'uat'
