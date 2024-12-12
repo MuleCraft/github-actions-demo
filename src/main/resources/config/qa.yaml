@@ -1,5 +1,2 @@
-http:
-  port: "8081"
-  
-log:
- message: "This is QA"
+api:
+  autodiscovery: "20098598"
