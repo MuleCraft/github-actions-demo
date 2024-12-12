@@ -49,7 +49,7 @@ jobs:
           mvn clean deploy --settings .maven/settings.xml -DskipMunitTests \
             -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
             -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}" \
-            -DapplicationName="${APPLICATION_NAME}"
+            -DapplicationName="github-actions-demo-dev"
 
       - name: Build and Deploy to CloudHub
         shell: bash
