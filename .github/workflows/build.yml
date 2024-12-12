@@ -7,8 +7,6 @@ on:
   push:
     branches:
       - dev
-      - uat
-      - main
 
 jobs:
   Deploying_to_Development:
@@ -33,25 +31,37 @@ jobs:
           java-version: 17
 
       - name: Publish to Exchange
+        shell: bash
         run: |
-          ARTIFACT_SUFFIX="-dev" # Default suffix for dev
-          if [[ "${{ github.ref_name }}" == feature/* ]]; then
-            ARTIFACT_SUFFIX="-feature"
-          fi
+          # Default artifact suffix for dev
+          ARTIFACT_SUFFIX="-dev" 
           echo "Publishing to Exchange with artifact suffix: ${ARTIFACT_SUFFIX}"
-          mvn deploy --settings .maven/settings.xml -DskipMunitTests \
-          -Dartifact.name="mc-demo-api${ARTIFACT_SUFFIX}" \
-          -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
-          -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}"
+      
+          # Get the artifactId from the pom.xml (assumes maven project is set up correctly)
+          ARTIFACT_NAME=$(mvn help:evaluate -Dexpression=project.artifactId -q -DforceStdout)
+      
+          # Build the final application name
+          APPLICATION_NAME="${ARTIFACT_NAME}${ARTIFACT_SUFFIX}"
+      
+          echo "Final Application Name: ${APPLICATION_NAME}"
+      
+          # Publish to Exchange
+          mvn clean deploy --settings .maven/settings.xml -DskipMunitTests  \
+            -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
+            -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}" 
 
-      - name: Build and Deploy to Dev
+      - name: Build and Deploy to CloudHub
+        shell: bash
         run: |
-          echo "Deploying to DEV environment for branch $GITHUB_REF_NAME"
+          echo "Deploying to CloudHub with artifact suffix: ${ARTIFACT_NAME}-${GITHUB_REF_NAME}"
           mvn deploy --settings .maven/settings.xml -DskipMunitTests -DmuleDeploy \
-          -Dclient.id="${{ secrets.DEV_CLIENT_ID }}" \
-          -Dclient.secret="${{ secrets.DEV_CLIENT_SECRET }}" \
-          -Danypoint.platform.client_id="${{ secrets.DEV_PLATFORM_CLIENT_ID }}" \
-          -Danypoint.platform.client_secret="${{ secrets.DEV_PLATFORM_CLIENT_SECRET }}"
+            -Dclient.id="${{ secrets.DEV_CLIENT_ID }}" \
+            -Dclient.secret="${{ secrets.DEV_CLIENT_SECRET }}" \
+            -Danypoint.platform.client_id="${{ secrets.DEV_PLATFORM_CLIENT_ID }}" \
+            -Danypoint.platform.client_secret="${{ secrets.DEV_PLATFORM_CLIENT_SECRET }}" \
+            -DcloudhubEnvironment="${{ secrets.CLOUDHUBENVIRONMENT }}" \
+            -Dtarget="${{ secrets.TARGET }}" \
+            -Denv="${{ secrets.ENV }}" 
 
   Deploying_to_UAT:
     if: github.event.pull_request.merged == true && github.ref_name == 'uat'
