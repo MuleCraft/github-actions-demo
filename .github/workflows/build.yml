@@ -1,9 +1,6 @@
 name: Publish and Deploy Pipeline
 
 on:
-  pull_request:
-    types:
-      - closed
   push:
     branches:
       - uat
