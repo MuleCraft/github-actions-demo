@@ -11,10 +11,9 @@ on:
       - main
 
 jobs:
-  Deploying_to_Development:
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev'
+  # Common Publish to Exchange job
+  Publish_to_Exchange:
     runs-on: ubuntu-latest
-    environment: dev # Associate with the 'dev' environment
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -34,11 +33,20 @@ jobs:
 
       - name: Publish to Exchange
         shell: bash
-        run: |      
-          # Publish to Exchange
+        run: |
+          echo "Publishing to Exchange"
           mvn clean deploy --settings .maven/settings.xml -DskipMunitTests  \
             -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
-            -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}" 
+            -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}"
+
+  Deploying_to_Development:
+    needs: Publish_to_Exchange
+    if: github.event.pull_request.merged == true && github.ref_name == 'dev'
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
       - name: Build and Deploy to DEV
         shell: bash
@@ -51,36 +59,16 @@ jobs:
             -Danypoint.platform.client_secret="${{ secrets.DEV_PLATFORM_CLIENT_SECRET }}" \
             -DcloudhubEnvironment="${{ secrets.CLOUDHUBENVIRONMENT }}" \
             -Dtarget="${{ secrets.TARGET }}" \
-            -Denv="${{ secrets.ENV }}" 
+            -Denv="${{ secrets.ENV }}"
 
   Deploying_to_UAT:
+    needs: Publish_to_Exchange
     if: github.event.pull_request.merged == true && github.ref_name == 'uat'
     runs-on: ubuntu-latest
-    environment: uat # Associate with the 'uat' environment
+    environment: uat
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: "zulu"
-          java-version: 17
-
-      - name: Publish to Exchange
-        shell: bash
-        run: |      
-          # Publish to Exchange
-          mvn clean deploy --settings .maven/settings.xml -DskipMunitTests  \
-            -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
-            -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}" 
 
       - name: Build and Deploy to UAT
         shell: bash
@@ -95,34 +83,15 @@ jobs:
             -Dtarget="${{ secrets.TARGET }}" \
             -Denv="${{ secrets.ENV }}"
 
+  # Deploying to PROD
   Deploying_to_PROD:
+    needs: Publish_to_Exchange
     if: github.event.pull_request.merged == true && github.ref_name == 'main'
     runs-on: ubuntu-latest
-    environment: prod # Associate with the 'prod' environment
+    environment: prod
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: "zulu"
-          java-version: 17
-
-      - name: Publish to Exchange
-        shell: bash
-        run: |      
-          # Publish to Exchange
-          mvn clean deploy --settings .maven/settings.xml -DskipMunitTests  \
-            -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
-            -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}" 
 
       - name: Build and Deploy to PROD
         shell: bash
