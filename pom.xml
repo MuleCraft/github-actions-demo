@@ -47,6 +47,7 @@
 						<releaseChannel>${releaseChannel}</releaseChannel>
 						<replicas>1</replicas>
 						<vCores>0.1</vCores>
+						<javaVersion>17</javaVersion>
 						<deploymentSettings>
 							<generateDefaultPublicUrl>true</generateDefaultPublicUrl>
 						</deploymentSettings>
@@ -105,7 +106,7 @@
 			<classifier>mule-plugin</classifier>
 		</dependency>
 		<dependency>
-			<groupId>73537153-ddd4-4182-aec6-2d6880059206</groupId>
+			<groupId>${project.groupId}</groupId>
 			<artifactId>mule-demo</artifactId>
 			<version>1.0.1</version>
 			<classifier>raml</classifier>
