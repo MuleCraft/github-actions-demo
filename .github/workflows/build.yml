@@ -41,7 +41,8 @@ jobs:
 
   Deploying_to_Development:
     needs: Publish_to_Exchange
-    if: github.event.pull_request.merged == true && github.ref_name == 'dev'
+    if: (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev') || 
+        (github.event_name == 'push' && github.ref == 'refs/heads/dev')
     runs-on: ubuntu-latest
     environment: dev
     steps:
@@ -63,7 +64,8 @@ jobs:
 
   Deploying_to_UAT:
     needs: Publish_to_Exchange
-    if: github.event.pull_request.merged == true && github.ref_name == 'uat'
+    if: (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'uat') || 
+        (github.event_name == 'push' && github.ref == 'refs/heads/uat')
     runs-on: ubuntu-latest
     environment: uat
     steps:
@@ -86,7 +88,8 @@ jobs:
   # Deploying to PROD
   Deploying_to_PROD:
     needs: Publish_to_Exchange
-    if: github.event.pull_request.merged == true && github.ref_name == 'main'
+    if: (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main') || 
+        (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     environment: prod
     steps:
