@@ -4,7 +4,7 @@
 
 	<groupId>73537153-ddd4-4182-aec6-2d6880059206</groupId>
 	<artifactId>github-actions-demo</artifactId>
-	<version>1.0.28</version>
+	<version>1.0.29</version>
 	<packaging>mule-application</packaging>
 
 	<name>github-actions-demo</name>
@@ -46,7 +46,7 @@
 						<applicationName>${project.artifactId}-${cloudhubEnvironment}</applicationName>
 						<releaseChannel>${releaseChannel}</releaseChannel>
 						<replicas>1</replicas>
-						<vCores>0.1</vCores>
+						<vCores>0.2</vCores>
 						<javaVersion>17</javaVersion>
 						<deploymentSettings>
 							<generateDefaultPublicUrl>true</generateDefaultPublicUrl>
