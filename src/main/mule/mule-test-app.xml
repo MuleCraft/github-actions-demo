@@ -5,7 +5,8 @@ http://www.mulesoft.org/schema/mule/sftp http://www.mulesoft.org/schema/mule/sft
         <http:listener-connection host="0.0.0.0" port="8081" />
     </http:listener-config>
     <apikit:config name="mule-test-app-config" api="resource::73537153-ddd4-4182-aec6-2d6880059206:mule-demo:1.0.1:raml:zip:mule-test-app.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
-    <api-gateway:autodiscovery apiId="20098598" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="675160dd-4cc0-4d15-a2f2-2f029f431127" flowRef="mule-test-app-main" />
+    <api-gateway:autodiscovery apiId="${api.autodiscovery}" ignoreBasePath="true" doc:name="API Autodiscovery" doc:id="675160dd-4cc0-4d15-a2f2-2f029f431127" flowRef="mule-test-app-main" />
+	<configuration-properties doc:name="Configuration properties" doc:id="4f0185d3-bfce-402d-8496-f407b290f328" file="config/${env}.yaml" />
 	<flow name="mule-test-app-main">
         <http:listener config-ref="mule-test-app-httpListenerConfig" path="/api/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
