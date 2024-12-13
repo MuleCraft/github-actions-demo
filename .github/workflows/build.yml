@@ -49,7 +49,6 @@ jobs:
       - name: Build and Deploy to DEV
         shell: bash
         run: |
-          echo "Deploying to CloudHub with artifact suffix: ${ARTIFACT_NAME}-${GITHUB_REF_NAME}"
           mvn deploy --settings .maven/settings.xml -DskipMunitTests -DmuleDeploy \
             -Dclient.id="${{ secrets.DEV_CLIENT_ID }}" \
             -Dclient.secret="${{ secrets.DEV_CLIENT_SECRET }}" \
@@ -72,7 +71,6 @@ jobs:
       - name: Build and Deploy to UAT
         shell: bash
         run: |
-          echo "Deploying to CloudHub with artifact suffix: ${ARTIFACT_NAME}-${GITHUB_REF_NAME}"
           mvn deploy --settings .maven/settings.xml -DskipMunitTests -DmuleDeploy \
             -Dclient.id="${{ secrets.UAT_CLIENT_ID }}" \
             -Dclient.secret="${{ secrets.UAT_CLIENT_SECRET }}" \
@@ -96,7 +94,6 @@ jobs:
       - name: Build and Deploy to PROD
         shell: bash
         run: |
-          echo "Deploying to CloudHub with artifact suffix: ${ARTIFACT_NAME}-${GITHUB_REF_NAME}"
           mvn deploy --settings .maven/settings.xml -DskipMunitTests -DmuleDeploy \
             -Dclient.id="${{ secrets.PROD_CLIENT_ID }}" \
             -Dclient.secret="${{ secrets.PROD_CLIENT_SECRET }}" \
