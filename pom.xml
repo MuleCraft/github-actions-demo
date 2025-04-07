@@ -4,7 +4,7 @@
 
 	<groupId>093df78e-9126-4c57-8330-1fc58756805c</groupId>
 	<artifactId>github-actions-demo</artifactId>
-	<version>1.0.33</version>
+	<version>1.0.34</version>
 	<packaging>mule-application</packaging>
 
 	<name>github-actions-demo</name>
