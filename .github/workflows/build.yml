@@ -104,10 +104,7 @@ jobs:
         shell: bash
         run: |
           echo "Publishing to Exchange"
-          mvn clean deploy --settings .maven/settings.xml -DskipMunitTests  \
-            -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
-            -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}" \
-            -DgroupId="${{ secrets.GROUPID }}" \
+          mvn clean deploy --settings .maven/settings.xml -DskipMunitTests 
 
   Deploying_to_Development:
     needs: Publish_to_Exchange
