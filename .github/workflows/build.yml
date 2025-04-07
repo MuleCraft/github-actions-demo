@@ -6,6 +6,7 @@ on:
       - uat
       - dev
       - main
+      - test_dependency
 
 jobs:
   # Common Publish to Exchange job
@@ -15,31 +16,64 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
-
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: "zulu"
           java-version: 17
 
+      - name: Check for Latest Stable Dependency Updates
+        shell: bash
+        run: |
+          echo "Checking for outdated dependencies (stable versions only)..."
+          mvn versions:display-dependency-updates > $(Build.SourcesDirectory)/dependency-updates.txt 2>&1
+          echo "===== Dependency Updates Output ====="
+          cat $(Build.SourcesDirectory)/dependency-updates.txt || echo "File is empty!"
+          echo "===================================="
+          if [ ! -s "$(Build.SourcesDirectory)/dependency-updates.txt" ]; then
+            echo "ERROR: dependency-updates.txt is empty! Maven might have failed."
+            exit 1
+          fi
+          stable_found="false"
+          echo "===== Checking for Stable Versions ====="
+          while IFS= read -r line; do
+            if [[ "$line" == *"->"* ]]; then
+              clean_line=$(echo "$line" | sed -E 's/^\[INFO\][[:space:]]*//')
+              dependency=$(echo "$clean_line" | awk -F'[: ]' '{print $1":"$2}' | xargs)
+              new_version=$(echo "$clean_line" | awk -F '->' '{print $2}' | xargs)
+              if [[ ! "$new_version" =~ [Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt] ]] && \
+                [[ ! "$new_version" =~ [Rr][Cc] ]] && \
+                [[ ! "$new_version" =~ [Aa][Ll][Pp][Hh][Aa] ]] && \
+                [[ ! "$new_version" =~ [Bb][Ee][Tt][Aa] ]]; then
+                echo "Stable version found: Dependency '$dependency' can be updated to version $new_version"
+                stable_found="true"
+              fi
+            fi
+          done < "$(Build.SourcesDirectory)/dependency-updates.txt"
+          if [[ "$stable_found" == "true" ]]; then
+            if [[ "$(enableFlag)" == "true" ]]; then
+              echo "ERROR: Stable newer dependency versions are available. Failing the build."
+              exit 1
+            else
+              echo "WARNING: Stable newer versions are available, Proceeding with build."
+            fi
+          else
+            echo "Only non-stable versions found. Proceeding with build."
+          fi
+
       - name: Publish to Exchange
         shell: bash
         run: |
           echo "Publishing to Exchange"
-          mvn clean deploy --settings .maven/settings.xml -DskipMunitTests  \
+          mvn clean deploy --settings .maven/settings.xml -DskipTests \
             -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
             -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}"
 
   Deploying_to_Development:
     needs: Publish_to_Exchange
-    if: (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev') || 
-        (github.event_name == 'push' && github.ref == 'refs/heads/dev')
+    if: >
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev') ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/dev')
     runs-on: ubuntu-latest
     environment: dev
     steps:
@@ -49,7 +83,7 @@ jobs:
       - name: Build and Deploy to DEV
         shell: bash
         run: |
-          mvn deploy --settings .maven/settings.xml -DskipMunitTests -DmuleDeploy \
+          mvn deploy --settings .maven/settings.xml -DskipTests -DmuleDeploy \
             -Dclient.id="${{ secrets.DEV_CLIENT_ID }}" \
             -Dclient.secret="${{ secrets.DEV_CLIENT_SECRET }}" \
             -Danypoint.platform.client_id="${{ secrets.DEV_PLATFORM_CLIENT_ID }}" \
@@ -60,8 +94,9 @@ jobs:
 
   Deploying_to_UAT:
     needs: Publish_to_Exchange
-    if: (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'uat') || 
-        (github.event_name == 'push' && github.ref == 'refs/heads/uat')
+    if: >
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'uat') ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/uat')
     runs-on: ubuntu-latest
     environment: uat
     steps:
@@ -71,7 +106,7 @@ jobs:
       - name: Build and Deploy to UAT
         shell: bash
         run: |
-          mvn deploy --settings .maven/settings.xml -DskipMunitTests -DmuleDeploy \
+          mvn deploy --settings .maven/settings.xml -DskipTests -DmuleDeploy \
             -Dclient.id="${{ secrets.UAT_CLIENT_ID }}" \
             -Dclient.secret="${{ secrets.UAT_CLIENT_SECRET }}" \
             -Danypoint.platform.client_id="${{ secrets.UAT_PLATFORM_CLIENT_ID }}" \
@@ -80,11 +115,11 @@ jobs:
             -Dtarget="${{ secrets.TARGET }}" \
             -Denv="${{ secrets.ENV }}"
 
-  # Deploying to PROD
   Deploying_to_PROD:
     needs: Publish_to_Exchange
-    if: (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main') || 
-        (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    if: >
+      (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main') ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     environment: prod
     steps:
@@ -94,7 +129,7 @@ jobs:
       - name: Build and Deploy to PROD
         shell: bash
         run: |
-          mvn deploy --settings .maven/settings.xml -DskipMunitTests -DmuleDeploy \
+          mvn deploy --settings .maven/settings.xml -DskipTests -DmuleDeploy \
             -Dclient.id="${{ secrets.PROD_CLIENT_ID }}" \
             -Dclient.secret="${{ secrets.PROD_CLIENT_SECRET }}" \
             -Danypoint.platform.client_id="${{ secrets.PROD_PLATFORM_CLIENT_ID }}" \
