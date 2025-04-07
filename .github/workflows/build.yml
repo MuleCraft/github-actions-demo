@@ -8,6 +8,9 @@ on:
       - main
       - feature/*
 
+permissions:
+  contents: write
+  
 jobs:
   # Common Publish to Exchange job
   Publish_to_Exchange:
