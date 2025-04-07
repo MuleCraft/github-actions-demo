@@ -6,7 +6,6 @@ on:
       - uat
       - dev
       - main
-      - test_dependency
 
 jobs:
   # Common Publish to Exchange job
@@ -26,11 +25,11 @@ jobs:
         shell: bash
         run: |
           echo "Checking for outdated dependencies (stable versions only)..."
-          mvn versions:display-dependency-updates > $(Build.SourcesDirectory)/dependency-updates.txt 2>&1
+          mvn versions:display-dependency-updates > dependency-updates.txt 2>&1
           echo "===== Dependency Updates Output ====="
-          cat $(Build.SourcesDirectory)/dependency-updates.txt || echo "File is empty!"
+          cat dependency-updates.txt || echo "File is empty!"
           echo "===================================="
-          if [ ! -s "$(Build.SourcesDirectory)/dependency-updates.txt" ]; then
+          if [ ! -s "dependency-updates.txt" ]; then
             echo "ERROR: dependency-updates.txt is empty! Maven might have failed."
             exit 1
           fi
@@ -49,9 +48,9 @@ jobs:
                 stable_found="true"
               fi
             fi
-          done < "$(Build.SourcesDirectory)/dependency-updates.txt"
+          done < "dependency-updates.txt"
           if [[ "$stable_found" == "true" ]]; then
-            if [[ "$(enableFlag)" == "true" ]]; then
+            if [[ "${{ vars.ENABLE_FLAG }}" == "true" ]]; then
               echo "ERROR: Stable newer dependency versions are available. Failing the build."
               exit 1
             else
