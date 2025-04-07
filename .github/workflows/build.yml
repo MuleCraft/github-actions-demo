@@ -58,6 +58,48 @@ jobs:
           distribution: "zulu"
           java-version: 17
 
+      - name: Check for Latest Stable Dependency Updates
+        shell: bash
+        run: |
+          echo "Checking for outdated dependencies (stable versions only)..."
+          mvn versions:display-dependency-updates > dependency-updates.txt 2>&1
+          echo "===== Dependency Updates Output ====="
+          cat dependency-updates.txt || echo "File is empty!"
+          echo "===================================="
+          
+          if [ ! -s "dependency-updates.txt" ]; then
+            echo "ERROR: dependency-updates.txt is empty! Maven might have failed."
+            exit 1
+          fi
+          
+          stable_found="false"
+          echo "===== Checking for Stable Versions ====="
+          while IFS= read -r line; do
+            if [[ "$line" == *"->"* ]]; then
+              clean_line=$(echo "$line" | sed -E 's/^\[INFO\][[:space:]]*//')
+              dependency=$(echo "$clean_line" | awk -F'[: ]' '{print $1":"$2}' | xargs)
+              new_version=$(echo "$clean_line" | awk -F '->' '{print $2}' | xargs)
+              if [[ ! "$new_version" =~ [Ss][Nn][Aa][Pp][Ss][Hh][Oo][Tt] ]] && \
+                [[ ! "$new_version" =~ [Rr][Cc] ]] && \
+                [[ ! "$new_version" =~ [Aa][Ll][Pp][Hh][Aa] ]] && \
+                [[ ! "$new_version" =~ [Bb][Ee][Tt][Aa] ]]; then
+                echo "Stable version found: Dependency '$dependency' can be updated to version $new_version"
+                stable_found="true"
+              fi
+            fi
+          done < "dependency-updates.txt"
+          
+          if [[ "$stable_found" == "true" ]]; then
+            if [[ "${{ vars.ENABLE_FLAG }}" == "true" ]]; then
+              echo "ERROR: Stable newer dependency versions are available. Failing the build."
+              exit 1
+            else
+              echo "WARNING: Stable newer versions are available, Proceeding with build."
+            fi
+          else
+            echo "Only non-stable versions found. Proceeding with build."
+          fi    
+
       - name: Publish to Exchange
         shell: bash
         run: |
