@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>${env.GROUPID}</groupId>
+  <groupId>ee5aa41f-5067-435e-81a5-409eb359ba52</groupId>
   <artifactId>github-actions-demo</artifactId>
   <version>1.0.35</version>
   <packaging>mule-application</packaging>
@@ -78,7 +78,7 @@
     <repository>
       <id>Repository</id>
       <name>Private Exchange repository</name>
-      <url>https://maven.anypoint.mulesoft.com/api/v3/organizations/${env.GROUPID}/maven</url>
+      <url>https://maven.anypoint.mulesoft.com/api/v3/organizations/ee5aa41f-5067-435e-81a5-409eb359ba52/maven</url>
       <layout>default</layout>
     </repository>
   </repositories>
@@ -109,7 +109,7 @@
       <classifier>mule-plugin</classifier>
     </dependency>
     <dependency>
-      <groupId>${env.GROUPID}</groupId>
+      <groupId>ee5aa41f-5067-435e-81a5-409eb359ba52</groupId>
       <artifactId>mule-demo</artifactId>
       <version>1.0.1</version>
       <classifier>raml</classifier>
@@ -127,7 +127,7 @@
     <repository>
       <id>Repository</id>
       <name>Anypoint Exchange</name>
-      <url>https://maven.anypoint.mulesoft.com/api/v3/organizations/${env.GROUPID}/maven</url>
+      <url>https://maven.anypoint.mulesoft.com/api/v3/organizations/ee5aa41f-5067-435e-81a5-409eb359ba52/maven</url>
       <layout>default</layout>
     </repository>
   </distributionManagement>
