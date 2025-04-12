@@ -1,4 +1,4 @@
-name: CI/CD for MuleSoft Application
+name: CI/CD Pipeline for Mule App
 
 on:
   push:
@@ -11,12 +11,16 @@ on:
 permissions:
   contents: write
 
+env:
+  CONNECTED_APP_CLIENT_ID: ${{ secrets.CONNECTED_APP_CLIENT_ID }}
+  CONNECTED_APP_CLIENT_SECRET: ${{ secrets.CONNECTED_APP_CLIENT_SECRET }}
+  GROUP_ID: ${{ secrets.GROUPID }}
+
 jobs:
-  publish-to-exchange:
-    name: Publish to Exchange
+  Publish_to_Exchange:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
       - name: Set up JDK 17
@@ -34,89 +38,72 @@ jobs:
 
       - name: Publish to Exchange
         run: |
-          mvn clean deploy -DskipTests --settings .maven/settings.xml \
-            -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
-            -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}" \
-            -Danypoint.platform.client_id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
-            -Danypoint.platform.client_secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}"
+          mvn clean deploy --settings .maven/settings.xml -DskipTests \
+            -Dclient.id=${CONNECTED_APP_CLIENT_ID} \
+            -Dclient.secret=${CONNECTED_APP_CLIENT_SECRET} \
+            -Danypoint.platform.client_id=${CONNECTED_APP_CLIENT_ID} \
+            -Danypoint.platform.client_secret=${CONNECTED_APP_CLIENT_SECRET} \
+            -DgroupId=${GROUP_ID}
 
-  deploy-to-dev:
-    name: Deploy to DEV
-    needs: publish-to-exchange
+  Deploy_to_DEV:
+    needs: Publish_to_Exchange
     if: github.ref == 'refs/heads/dev'
     runs-on: ubuntu-latest
-    environment: dev
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: 17
 
-      - name: Deploy to CloudHub2 - DEV
+      - name: Deploy to DEV
         run: |
-          mvn deploy -DskipTests -DmuleDeploy --settings .maven/settings.xml \
-            -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
-            -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}" \
-            -Danypoint.platform.client_id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
-            -Danypoint.platform.client_secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}" \
-            -DcloudhubEnvironment=dev \
-            -Dtarget=DEV_TARGET \
+          mvn deploy --settings .maven/settings.xml -DskipTests -DmuleDeploy \
+            -Dclient.id=${CONNECTED_APP_CLIENT_ID} \
+            -Dclient.secret=${CONNECTED_APP_CLIENT_SECRET} \
+            -Danypoint.platform.client_id=${CONNECTED_APP_CLIENT_ID} \
+            -Danypoint.platform.client_secret=${CONNECTED_APP_CLIENT_SECRET} \
+            -DgroupId=${GROUP_ID} \
             -Denv=dev
 
-  deploy-to-uat:
-    name: Deploy to UAT
-    needs: publish-to-exchange
+  Deploy_to_UAT:
+    needs: Publish_to_Exchange
     if: github.ref == 'refs/heads/uat'
     runs-on: ubuntu-latest
-    environment: uat
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: 17
 
-      - name: Deploy to CloudHub2 - UAT
+      - name: Deploy to UAT
         run: |
-          mvn deploy -DskipTests -DmuleDeploy --settings .maven/settings.xml \
-            -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
-            -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}" \
-            -Danypoint.platform.client_id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
-            -Danypoint.platform.client_secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}" \
-            -DcloudhubEnvironment=uat \
-            -Dtarget=UAT_TARGET \
+          mvn deploy --settings .maven/settings.xml -DskipTests -DmuleDeploy \
+            -Dclient.id=${CONNECTED_APP_CLIENT_ID} \
+            -Dclient.secret=${CONNECTED_APP_CLIENT_SECRET} \
+            -Danypoint.platform.client_id=${CONNECTED_APP_CLIENT_ID} \
+            -Danypoint.platform.client_secret=${CONNECTED_APP_CLIENT_SECRET} \
+            -DgroupId=${GROUP_ID} \
             -Denv=uat
 
-  deploy-to-prd:
-    name: Deploy to PROD
-    needs: publish-to-exchange
+  Deploy_to_PROD:
+    needs: Publish_to_Exchange
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    environment: prod
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: 17
 
-      - name: Deploy to CloudHub2 - PROD
+      - name: Deploy to PROD
         run: |
-          mvn deploy -DskipTests -DmuleDeploy --settings .maven/settings.xml \
-            -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
-            -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}" \
-            -Danypoint.platform.client_id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
-            -Danypoint.platform.client_secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}" \
-            -DcloudhubEnvironment=prod \
-            -Dtarget=PROD_TARGET \
+          mvn deploy --settings .maven/settings.xml -DskipTests -DmuleDeploy \
+            -Dclient.id=${CONNECTED_APP_CLIENT_ID} \
+            -Dclient.secret=${CONNECTED_APP_CLIENT_SECRET} \
+            -Danypoint.platform.client_id=${CONNECTED_APP_CLIENT_ID} \
+            -Danypoint.platform.client_secret=${CONNECTED_APP_CLIENT_SECRET} \
+            -DgroupId=${GROUP_ID} \
             -Denv=prod
