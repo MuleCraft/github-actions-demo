@@ -1,48 +1,98 @@
-name: test - Build and Deploy
+name: Build and Deploy to All Envs
 
 on:
   push:
-    branches: 
-      - sandbox
-      - dev
-      - uat
-      - prod
-      - feature/test*
-#normally you wouldn't be deploying master branch pushes to Sandbox,
-#but we're keeping things simple! 😁
+    branches: [main]
 
-#setup enviroment variables using github secrets that will be utilized for setting.xml and pom.xml
 env:
+  GROUP_ID: ${{ secrets.GROUP_ID }}
+  CLIENT_ID: ${{ secrets.CONNECTED_APP_CLIENT_ID }}
+  CLIENT_SECRET: ${{ secrets.CONNECTED_APP_CLIENT_SECRET }}
   PLATFORM_USERNAME: ${{ secrets.PLATFORMUSERNAME }}
   PLATFORM_PASSWORD: ${{ secrets.PLATFORMPASSWORD }}
-  ENVIRONMENT: ${{ secrets.ENVIRONMENT}}
 
 jobs:
-  BuildAndDeployToDev:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: Sandbox
+
     steps:
-#first, we need to checkout our mule application's branch code
-      - name: Checkout repository
-        uses: actions/checkout@v2
-#second, cache dependencies, No need to download every time
-      - name: cache dependencies
-        uses: actions/setup-java@v2
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
           java-version: '11'
-          distribution: 'adopt'
-          cache: maven
-#third, build with Maven
-      - name: Build with Maven
-        run: mvn -B clean package -s .maven/settings.xml
-#fourth, upload artifact, to utilize for other repo.(optional)
-      - name: upload Artifact
-        run: mkdir staging && cp target/*.jar staging
-      - uses: actions/upload-artifact@v2
+          distribution: 'temurin'
+
+      - name: Cache Maven Dependencies
+        uses: actions/cache@v4
         with:
-          name: Package
-          path: staging
-#fifth, Deploy with Maven
-      - name: Deploy
-        run: mvn -B deploy -DmuleDeploy -s .maven/settings.xml
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Create settings.xml
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/settings.xml <<EOF
+          <settings>
+            <servers>
+              <server>
+                <id>anypoint-exchange</id>
+                <username>${{ secrets.CONNECTED_APP_CLIENT_ID }}</username>
+                <password>${{ secrets.CONNECTED_APP_CLIENT_SECRET }}</password>
+              </server>
+            </servers>
+            <profiles>
+              <profile>
+                <id>default</id>
+                <activation><activeByDefault>true</activeByDefault></activation>
+              </profile>
+            </profiles>
+          </settings>
+          EOF
+
+      - name: Build Application
+        run: mvn clean package -s ~/.m2/settings.xml
+
+      - name: Publish to Exchange
+        run: |
+          mvn deploy -DskipTests \
+          -Danypoint.username=${{ secrets.PLATFORMUSERNAME }} \
+          -Danypoint.password=${{ secrets.PLATFORMPASSWORD }} \
+          -Dclient.id=${{ secrets.CONNECTED_APP_CLIENT_ID }} \
+          -Dclient.secret=${{ secrets.CONNECTED_APP_CLIENT_SECRET }} \
+          -Denv=dev \
+          -s ~/.m2/settings.xml
+
+      - name: Deploy to Dev
+        run: |
+          mvn deploy -DskipTests -DmuleDeploy \
+          -Danypoint.env=dev \
+          -Dclient.id=${{ secrets.CONNECTED_APP_CLIENT_ID }} \
+          -Dclient.secret=${{ secrets.CONNECTED_APP_CLIENT_SECRET }} \
+          -Dusername=${{ secrets.PLATFORMUSERNAME }} \
+          -Dpassword=${{ secrets.PLATFORMPASSWORD }} \
+          -s ~/.m2/settings.xml
+
+      - name: Deploy to UAT
+        run: |
+          mvn deploy -DskipTests -DmuleDeploy \
+          -Danypoint.env=uat \
+          -Dclient.id=${{ secrets.CONNECTED_APP_CLIENT_ID }} \
+          -Dclient.secret=${{ secrets.CONNECTED_APP_CLIENT_SECRET }} \
+          -Dusername=${{ secrets.PLATFORMUSERNAME }} \
+          -Dpassword=${{ secrets.PLATFORMPASSWORD }} \
+          -s ~/.m2/settings.xml
+
+      - name: Deploy to PRD
+        run: |
+          mvn deploy -DskipTests -DmuleDeploy \
+          -Danypoint.env=prd \
+          -Dclient.id=${{ secrets.CONNECTED_APP_CLIENT_ID }} \
+          -Dclient.secret=${{ secrets.CONNECTED_APP_CLIENT_SECRET }} \
+          -Dusername=${{ secrets.PLATFORMUSERNAME }} \
+          -Dpassword=${{ secrets.PLATFORMPASSWORD }} \
+          -s ~/.m2/settings.xml
