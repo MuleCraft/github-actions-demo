@@ -1,109 +1,48 @@
-name: CI/CD Pipeline for Mule App
+name: Sandbox - Build and Deploy
 
 on:
   push:
-    branches:
+    branches: 
+      - sandbox
       - dev
       - uat
-      - main
+      - prod
       - feature/test*
+#normally you wouldn't be deploying master branch pushes to Sandbox,
+#but we're keeping things simple! 😁
 
-permissions:
-  contents: write
-
+#setup enviroment variables using github secrets that will be utilized for setting.xml and pom.xml
 env:
-  CONNECTED_APP_CLIENT_ID: ${{ secrets.CONNECTED_APP_CLIENT_ID }}
-  CONNECTED_APP_CLIENT_SECRET: ${{ secrets.CONNECTED_APP_CLIENT_SECRET }}
-  GROUP_ID: ${{ secrets.GROUPID }}
+  PLATFORM_USERNAME: ${{ secrets.PLATFORMUSERNAME }}
+  PLATFORM_PASSWORD: ${{ secrets.PLATFORMPASSWORD }}
+  ENVIRONMENT: ${{ secrets.ENVIRONMENT}}
 
 jobs:
-  Publish_to_Exchange:
+  BuildAndDeployToDev:
     runs-on: ubuntu-latest
+    environment:
+      name: Sandbox
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
+#first, we need to checkout our mule application's branch code
+      - name: Checkout repository
+        uses: actions/checkout@v2
+#second, cache dependencies, No need to download every time
+      - name: cache dependencies
+        uses: actions/setup-java@v2
         with:
-          distribution: 'zulu'
-          java-version: 17
-
-      - name: Cache Maven dependencies
-        uses: actions/cache@v4
+          java-version: '11'
+          distribution: 'adopt'
+          cache: maven
+#third, build with Maven
+      - name: Build with Maven
+        run: mvn -B clean package -s .maven/settings.xml
+#fourth, upload artifact, to utilize for other repo.(optional)
+      - name: upload Artifact
+        run: mkdir staging && cp target/*.jar staging
+      - uses: actions/upload-artifact@v2
         with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
-
-      - name: Publish to Exchange
-        run: |
-          mvn clean deploy --settings .maven/settings.xml -DskipTests \
-            -Dclient.id=${CONNECTED_APP_CLIENT_ID} \
-            -Dclient.secret=${CONNECTED_APP_CLIENT_SECRET} \
-            -Danypoint.platform.client_id=${CONNECTED_APP_CLIENT_ID} \
-            -Danypoint.platform.client_secret=${CONNECTED_APP_CLIENT_SECRET} \
-            -DgroupId=${GROUP_ID}
-
-  Deploy_to_DEV:
-    needs: Publish_to_Exchange
-    if: github.ref == 'refs/heads/dev'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: 17
-
-      - name: Deploy to DEV
-        run: |
-          mvn deploy --settings .maven/settings.xml -DskipTests -DmuleDeploy \
-            -Dclient.id=${CONNECTED_APP_CLIENT_ID} \
-            -Dclient.secret=${CONNECTED_APP_CLIENT_SECRET} \
-            -Danypoint.platform.client_id=${CONNECTED_APP_CLIENT_ID} \
-            -Danypoint.platform.client_secret=${CONNECTED_APP_CLIENT_SECRET} \
-            -DgroupId=${GROUP_ID} \
-            -Denv=dev
-
-  Deploy_to_UAT:
-    needs: Publish_to_Exchange
-    if: github.ref == 'refs/heads/uat'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: 17
-
-      - name: Deploy to UAT
-        run: |
-          mvn deploy --settings .maven/settings.xml -DskipTests -DmuleDeploy \
-            -Dclient.id=${CONNECTED_APP_CLIENT_ID} \
-            -Dclient.secret=${CONNECTED_APP_CLIENT_SECRET} \
-            -Danypoint.platform.client_id=${CONNECTED_APP_CLIENT_ID} \
-            -Danypoint.platform.client_secret=${CONNECTED_APP_CLIENT_SECRET} \
-            -DgroupId=${GROUP_ID} \
-            -Denv=uat
-
-  Deploy_to_PROD:
-    needs: Publish_to_Exchange
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-        with:
-          distribution: 'zulu'
-          java-version: 17
-
-      - name: Deploy to PROD
-        run: |
-          mvn deploy --settings .maven/settings.xml -DskipTests -DmuleDeploy \
-            -Dclient.id=${CONNECTED_APP_CLIENT_ID} \
-            -Dclient.secret=${CONNECTED_APP_CLIENT_SECRET} \
-            -Danypoint.platform.client_id=${CONNECTED_APP_CLIENT_ID} \
-            -Danypoint.platform.client_secret=${CONNECTED_APP_CLIENT_SECRET} \
-            -DgroupId=${GROUP_ID} \
-            -Denv=prod
+          name: Package
+          path: staging
+#fifth, Deploy with Maven
+      - name: Deploy
+        run: mvn -B deploy -DmuleDeploy -s .maven/settings.xml
