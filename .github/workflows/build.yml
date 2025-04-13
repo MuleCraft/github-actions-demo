@@ -2,7 +2,11 @@ name: Build and Deploy to All Envs
 
 on:
   push:
-    branches: [main]
+    branches: 
+      - dev
+      - uat
+      - main
+      - feature/*
 
 env:
   GROUP_ID: ${{ secrets.GROUP_ID }}
