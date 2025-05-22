@@ -1,104 +1,102 @@
-name: Publish and Deploy Pipeline
+name: Build and Deploy to All Envs
 
 on:
   push:
-    branches:
-      - uat
+    branches: 
       - dev
+      - uat
       - main
+      
+
+env:
+  GROUP_ID: ${{ secrets.GROUP_ID }}
+  CLIENT_ID: ${{ secrets.CONNECTED_APP_CLIENT_ID }}
+  CLIENT_SECRET: ${{ secrets.CONNECTED_APP_CLIENT_SECRET }}
+  PLATFORM_USERNAME: ${{ secrets.PLATFORMUSERNAME }}
+  PLATFORM_PASSWORD: ${{ secrets.PLATFORMPASSWORD }}
 
 jobs:
-  # Common Publish to Exchange job
-  Publish_to_Exchange:
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Cache dependencies
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '11'
+          distribution: 'temurin'
+
+      - name: Cache Maven Dependencies
         uses: actions/cache@v4
         with:
           path: ~/.m2/repository
           key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: ${{ runner.os }}-maven-
+          restore-keys: |
+            ${{ runner.os }}-maven-
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: "zulu"
-          java-version: 17
+      - name: Create settings.xml
+        run: |
+          mkdir -p ~/.m2
+          cat > ~/.m2/settings.xml <<EOF
+          <settings>
+            <servers>
+              <server>
+                <id>anypoint-exchange</id>
+                <username>${{ secrets.CONNECTED_APP_CLIENT_ID }}</username>
+                <password>${{ secrets.CONNECTED_APP_CLIENT_SECRET }}</password>
+              </server>
+            </servers>
+            <profiles>
+              <profile>
+                <id>default</id>
+                <activation><activeByDefault>true</activeByDefault></activation>
+              </profile>
+            </profiles>
+          </settings>
+          EOF
+
+      - name: Build Application
+        run: mvn clean package -s ~/.m2/settings.xml
 
       - name: Publish to Exchange
-        shell: bash
         run: |
-          echo "Publishing to Exchange"
-          mvn clean deploy --settings .maven/settings.xml -DskipMunitTests  \
-            -Dclient.id="${{ secrets.CONNECTED_APP_CLIENT_ID }}" \
-            -Dclient.secret="${{ secrets.CONNECTED_APP_CLIENT_SECRET }}"
+          mvn deploy -DskipTests \
+          -Danypoint.username=${{ secrets.PLATFORMUSERNAME }} \
+          -Danypoint.password=${{ secrets.PLATFORMPASSWORD }} \
+          -Dclient.id=${{ secrets.CONNECTED_APP_CLIENT_ID }} \
+          -Dclient.secret=${{ secrets.CONNECTED_APP_CLIENT_SECRET }} \
+          -Denv=dev \
+          -s ~/.m2/settings.xml
 
-  Deploying_to_Development:
-    needs: Publish_to_Exchange
-    if: (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'dev') || 
-        (github.event_name == 'push' && github.ref == 'refs/heads/dev')
-    runs-on: ubuntu-latest
-    environment: dev
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Build and Deploy to DEV
-        shell: bash
+      - name: Deploy to Dev
         run: |
-          mvn deploy --settings .maven/settings.xml -DskipMunitTests -DmuleDeploy \
-            -Dclient.id="${{ secrets.DEV_CLIENT_ID }}" \
-            -Dclient.secret="${{ secrets.DEV_CLIENT_SECRET }}" \
-            -Danypoint.platform.client_id="${{ secrets.DEV_PLATFORM_CLIENT_ID }}" \
-            -Danypoint.platform.client_secret="${{ secrets.DEV_PLATFORM_CLIENT_SECRET }}" \
-            -DcloudhubEnvironment="${{ secrets.CLOUDHUBENVIRONMENT }}" \
-            -Dtarget="${{ secrets.TARGET }}" \
-            -Denv="${{ secrets.ENV }}"
+          mvn deploy -DskipTests -DmuleDeploy \
+          -Danypoint.env=dev \
+          -Dclient.id=${{ secrets.CONNECTED_APP_CLIENT_ID }} \
+          -Dclient.secret=${{ secrets.CONNECTED_APP_CLIENT_SECRET }} \
+          -Dusername=${{ secrets.PLATFORMUSERNAME }} \
+          -Dpassword=${{ secrets.PLATFORMPASSWORD }} \
+          -s ~/.m2/settings.xml
 
-  Deploying_to_UAT:
-    needs: Publish_to_Exchange
-    if: (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'uat') || 
-        (github.event_name == 'push' && github.ref == 'refs/heads/uat')
-    runs-on: ubuntu-latest
-    environment: uat
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Build and Deploy to UAT
-        shell: bash
+      - name: Deploy to UAT
         run: |
-          mvn deploy --settings .maven/settings.xml -DskipMunitTests -DmuleDeploy \
-            -Dclient.id="${{ secrets.UAT_CLIENT_ID }}" \
-            -Dclient.secret="${{ secrets.UAT_CLIENT_SECRET }}" \
-            -Danypoint.platform.client_id="${{ secrets.UAT_PLATFORM_CLIENT_ID }}" \
-            -Danypoint.platform.client_secret="${{ secrets.UAT_PLATFORM_CLIENT_SECRET }}" \
-            -DcloudhubEnvironment="${{ secrets.CLOUDHUBENVIRONMENT }}" \
-            -Dtarget="${{ secrets.TARGET }}" \
-            -Denv="${{ secrets.ENV }}"
+          mvn deploy -DskipTests -DmuleDeploy \
+          -Danypoint.env=uat \
+          -Dclient.id=${{ secrets.CONNECTED_APP_CLIENT_ID }} \
+          -Dclient.secret=${{ secrets.CONNECTED_APP_CLIENT_SECRET }} \
+          -Dusername=${{ secrets.PLATFORMUSERNAME }} \
+          -Dpassword=${{ secrets.PLATFORMPASSWORD }} \
+          -s ~/.m2/settings.xml
 
-  # Deploying to PROD
-  Deploying_to_PROD:
-    needs: Publish_to_Exchange
-    if: (github.event_name == 'pull_request' && github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main') || 
-        (github.event_name == 'push' && github.ref == 'refs/heads/main')
-    runs-on: ubuntu-latest
-    environment: prod
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Build and Deploy to PROD
-        shell: bash
+      - name: Deploy to PRD
         run: |
-          mvn deploy --settings .maven/settings.xml -DskipMunitTests -DmuleDeploy \
-            -Dclient.id="${{ secrets.PROD_CLIENT_ID }}" \
-            -Dclient.secret="${{ secrets.PROD_CLIENT_SECRET }}" \
-            -Danypoint.platform.client_id="${{ secrets.PROD_PLATFORM_CLIENT_ID }}" \
-            -Danypoint.platform.client_secret="${{ secrets.PROD_PLATFORM_CLIENT_SECRET }}" \
-            -DcloudhubEnvironment="${{ secrets.CLOUDHUBENVIRONMENT }}" \
-            -Dtarget="${{ secrets.TARGET }}" \
-            -Denv="${{ secrets.ENV }}"
+          mvn deploy -DskipTests -DmuleDeploy \
+          -Danypoint.env=prd \
+          -Dclient.id=${{ secrets.CONNECTED_APP_CLIENT_ID }} \
+          -Dclient.secret=${{ secrets.CONNECTED_APP_CLIENT_SECRET }} \
+          -Dusername=${{ secrets.PLATFORMUSERNAME }} \
+          -Dpassword=${{ secrets.PLATFORMPASSWORD }} \
+          -s ~/.m2/settings.xml
