@@ -6,7 +6,7 @@ on:
       - dev
       - uat
       - main
-      - feature/*
+      
 
 env:
   GROUP_ID: ${{ secrets.GROUP_ID }}
